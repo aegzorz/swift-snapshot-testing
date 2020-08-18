@@ -33,6 +33,7 @@ extension Snapshotting where Value: SwiftUI.View, Format == UIImage {
   public static func image(
     drawHierarchyInKeyWindow: Bool = false,
     precision: Float = 1,
+    strategy: ImageDiffingStrategy = .perImage,
     layout: SwiftUISnapshotLayout = .sizeThatFits,
     traits: UITraitCollection = .init()
     )
@@ -51,7 +52,7 @@ extension Snapshotting where Value: SwiftUI.View, Format == UIImage {
         config = .init(safeArea: .zero, size: size, traits: traits)
       }
 
-      return SimplySnapshotting.image(precision: precision).asyncPullback { view in
+      return SimplySnapshotting.image(precision: precision, strategy: strategy).asyncPullback { view in
         var config = config
 
         let controller: UIViewController

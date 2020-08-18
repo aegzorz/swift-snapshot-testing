@@ -17,12 +17,13 @@ extension Snapshotting where Value == UIViewController, Format == UIImage {
   public static func image(
     on config: ViewImageConfig,
     precision: Float = 1,
+    strategy: ImageDiffingStrategy = .perImage,
     size: CGSize? = nil,
     traits: UITraitCollection = .init()
     )
     -> Snapshotting {
 
-      return SimplySnapshotting.image(precision: precision).asyncPullback { viewController in
+      return SimplySnapshotting.image(precision: precision, strategy: strategy).asyncPullback { viewController in
         snapshotView(
           config: size.map { .init(safeArea: config.safeArea, size: $0, traits: config.traits) } ?? config,
           drawHierarchyInKeyWindow: false,
@@ -43,12 +44,13 @@ extension Snapshotting where Value == UIViewController, Format == UIImage {
   public static func image(
     drawHierarchyInKeyWindow: Bool = false,
     precision: Float = 1,
+    strategy: ImageDiffingStrategy = .perImage,
     size: CGSize? = nil,
     traits: UITraitCollection = .init()
     )
     -> Snapshotting {
 
-      return SimplySnapshotting.image(precision: precision).asyncPullback { viewController in
+      return SimplySnapshotting.image(precision: precision, strategy: strategy).asyncPullback { viewController in
         snapshotView(
           config: .init(safeArea: .zero, size: size, traits: traits),
           drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,

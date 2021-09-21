@@ -1,8 +1,3 @@
-public enum ImageDiffingStrategy {
-  case perImage
-  case perPixel
-}
-
 #if os(iOS) || os(tvOS)
 import UIKit
 import XCTest

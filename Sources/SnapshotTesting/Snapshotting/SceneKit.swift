@@ -13,8 +13,8 @@ extension Snapshotting where Value == SCNScene, Format == NSImage {
   /// - Parameters:
   ///   - precision: The percentage of pixels that must match.
   ///   - size: The size of the scene.
-  public static func image(precision: Float = 1, size: CGSize) -> Snapshotting {
-    return .scnScene(precision: precision, size: size)
+  public static func image(precision: Float = 1, strategy: ImageDiffingStrategy = .perImage, size: CGSize) -> Snapshotting {
+    return .scnScene(precision: precision, strategy: strategy, size: size)
   }
 }
 #elseif os(iOS) || os(tvOS)

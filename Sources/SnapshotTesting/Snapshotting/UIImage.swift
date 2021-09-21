@@ -1,11 +1,11 @@
-#if os(iOS) || os(tvOS)
-import UIKit
-import XCTest
-
 public enum ImageDiffingStrategy {
   case perImage
   case perPixel
 }
+
+#if os(iOS) || os(tvOS)
+import UIKit
+import XCTest
 
 extension Diffing where Value == UIImage {
   /// A pixel-diffing strategy for UIImage's which requires a 100% match.

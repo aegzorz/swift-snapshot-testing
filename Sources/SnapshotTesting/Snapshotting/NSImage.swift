@@ -10,12 +10,12 @@ extension Diffing where Value == NSImage {
   ///
   /// - Parameter precision: A value between 0 and 1, where 1 means the images must match 100% of their pixels.
   /// - Returns: A new diffing strategy.
-  public static func image(precision: Float) -> Diffing {
+  public static func image(precision: Float, strategy: ImageDiffingStrategy = .perImage) -> Diffing {
     return .init(
       toData: { NSImagePNGRepresentation($0)! },
       fromData: { NSImage(data: $0)! }
     ) { old, new in
-      guard !compare(old, new, precision: precision) else { return nil }
+      guard !compare(old, new, precision: precision, strategy: strategy) else { return nil }
       let difference = SnapshotTesting.diff(old, new)
       let message = new.size == old.size
         ? "Newly-taken snapshot does not match reference."
@@ -37,10 +37,10 @@ extension Snapshotting where Value == NSImage, Format == NSImage {
   /// A snapshot strategy for comparing images based on pixel equality.
   ///
   /// - Parameter precision: The percentage of pixels that must match.
-  public static func image(precision: Float) -> Snapshotting {
+  public static func image(precision: Float, strategy: ImageDiffingStrategy = .perImage) -> Snapshotting {
     return .init(
       pathExtension: "png",
-      diffing: .image(precision: precision)
+      diffing: .image(precision: precision, strategy: strategy)
     )
   }
 }
@@ -52,7 +52,7 @@ private func NSImagePNGRepresentation(_ image: NSImage) -> Data? {
   return rep.representation(using: .png, properties: [:])
 }
 
-private func compare(_ old: NSImage, _ new: NSImage, precision: Float) -> Bool {
+private func compare(_ old: NSImage, _ new: NSImage, precision: Float, strategy: ImageDiffingStrategy) -> Bool {
   guard let oldCgImage = old.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return false }
   guard let newCgImage = new.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return false }
   guard oldCgImage.width != 0 else { return false }
@@ -78,12 +78,33 @@ private func compare(_ old: NSImage, _ new: NSImage, precision: Float) -> Bool {
   var differentPixelCount = 0
   let pixelCount = oldRep.pixelsWide * oldRep.pixelsHigh
   let threshold = 1 - precision
-  for x in 0..<oldRep.pixelsWide {
-    for y in 0..<oldRep.pixelsHigh {
-      if oldRep.colorAt(x: x, y: y) != newRep.colorAt(x: x, y: y) { differentPixelCount += 1 }
-      if Float(differentPixelCount) / Float(pixelCount) > threshold { return false}
+  
+  switch strategy {
+  case .perImage:
+    for x in 0..<oldRep.pixelsWide {
+      for y in 0..<oldRep.pixelsHigh {
+        if oldRep.colorAt(x: x, y: y) != newRep.colorAt(x: x, y: y) { differentPixelCount += 1 }
+        if Float(differentPixelCount) / Float(pixelCount) > threshold { return false}
+      }
+    }
+  case .perPixel:
+    for x in 0..<oldRep.pixelsWide {
+      for y in 0..<oldRep.pixelsHigh {
+        guard let oldColor = oldRep.colorAt(x: x, y: y), let newColor = newRep.colorAt(x: x, y: y) else {
+          return false
+        }
+        
+        let diffs = [\NSColor.alphaComponent, \NSColor.redComponent, \NSColor.greenComponent, \NSColor.blueComponent].map { keyPath in
+          abs(oldColor[keyPath: keyPath] - newColor[keyPath: keyPath]) > CGFloat(threshold)
+        }
+        
+        if diffs.contains(true) {
+          return false
+        }
+      }
     }
   }
+  
   return true
 }
 
